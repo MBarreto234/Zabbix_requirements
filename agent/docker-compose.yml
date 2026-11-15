@@ -1,0 +1,24 @@
+### Zabbix Agent 2 contenerizado (una copia por VM)
+### Se configura solo con .env (copiar de .env.example)
+###   docker compose up -d
+
+services:
+  zabbix-agent:
+    image: zabbix/zabbix-agent2:alpine-7.0-latest
+    container_name: zabbix-agent
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    privileged: true
+    user: root
+    environment:
+      - ZBX_SERVER_HOST=${ZBX_SERVER_IP}
+      - ZBX_SERVER_ACTIVE=${ZBX_SERVER_IP}:10051
+      - ZBX_HOSTNAME=${ZBX_HOSTNAME}
+      - ZBX_PASSIVE_ALLOW=true
+      - ZBX_ACTIVE_ALLOW=true
+      - ZBX_TIMEOUT=10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/hostname:/etc/hostname:ro
+      - /etc/os-release:/etc/os-release:ro

@@ -1,0 +1,10 @@
+### Servidor NTP (chrony) - VLAN 82
+services:
+  ntp:
+    image: francopro/ntp-vlan82@sha256:d350f0d43ec39099fe8d5f07fa484e2084cddbe35542c17e9cff7dc173b722d0   # tag 1.0
+    container_name: ntp-server
+    restart: unless-stopped
+    ports:
+      - "123:123/udp"
+    volumes:
+      - ./chrony.conf:/etc/chrony/chrony.conf:ro

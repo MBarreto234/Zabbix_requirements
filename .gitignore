@@ -1,0 +1,21 @@
+# Secretos y configuración local: NUNCA subir
+.env
+*.env
+!.env.example
+
+# Datos y respaldos
+*.sql
+*.sql.gz
+*.dump
+backups/
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Datos generados por los servicios
+services/syslog/logs/
+services/tftp/tftpboot/*
+!services/tftp/tftpboot/.gitkeep

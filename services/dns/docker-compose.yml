@@ -1,0 +1,14 @@
+### Servidor DNS (BIND) - VLAN 81
+services:
+  dns:
+    image: francopro/dns-vlan81@sha256:72c74228ebfbcd11b43a715b0dfa8ecac11bd4c30f0558bbea591cb3ca92cf2e   # tag 1.0
+    container_name: dns-server
+    restart: unless-stopped
+    ports:
+      # Enlazado a la IP de la VM para no chocar con systemd-resolved
+      - "${SERVER_IP}:53:53/udp"
+      - "${SERVER_IP}:53:53/tcp"
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID]   # BIND cambia al usuario "bind" al arrancar
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,15 @@
+### Servidor TFTP (tftpd-hpa) - VLAN 84
+### network_mode host: TFTP responde desde un puerto UDP distinto al 69
+### y la publicación de puertos de Docker suele romper las transferencias.
+services:
+  tftp:
+    image: francopro/tftp-vlan84@sha256:714aadb2b34530827accb8b2b57d2fc6911914b8ae14da56b70708e61ef12c79   # tag 1.0
+    container_name: tftp-server
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./tftpboot:/srv/tftp
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, SYS_CHROOT]
+    security_opt:
+      - no-new-privileges:true
