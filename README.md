@@ -67,16 +67,54 @@ corren exactamente la misma versión. Para actualizar una: `docker pull francopr
 obtener el nuevo digest con `docker inspect --format '{{index .RepoDigests 0}}' francopro/xxx:TAG`
 y reemplazarlo en el `docker-compose.yml` del servicio.
 
+### Syslog: permisos de la carpeta `logs/` (primera vez en cada VM)
+
+La carpeta `logs/` la crea Docker como `root` y rsyslog, que corre con el usuario `syslog`, no puede escribir en ella.
+Después del primer `docker compose up -d`:
+
+```bash
+cd services/syslog
+sudo chown -R $(sudo docker exec syslog-server id -u syslog):$(sudo docker exec syslog-server id -g syslog) logs
+sudo docker compose restart
+```
+
+Los mensajes de otros equipos se guardan en `logs/remote/<IP_DEL_EMISOR>.log` (se leen con `sudo`).
+Prueba desde otra VM: `logger -n IP_DEL_SYSLOG -P 514 -d mensaje-de-prueba` y, en el servidor,
+`sudo grep -r mensaje-de-prueba logs`.
+
+### TFTP: carpeta `tftpboot/` y pruebas
+
+El contenedor usa `network_mode: host` y sirve `/srv/tftp` (montado desde `tftpboot/`) con `--secure --create`.
+Docker crea `tftpboot/` como `root`, así que los archivos se añaden con `sudo`:
+
+```bash
+cd services/tftp
+echo prueba | sudo tee tftpboot/prueba.txt
+sudo chmod 755 tftpboot && sudo chmod 644 tftpboot/prueba.txt
+sudo docker compose up -d
+sudo ss -ulnp | grep :69
+```
+
+Para aceptar **subidas** (`--create`), dar la carpeta al usuario del contenedor:
+
+```bash
+sudo chown -R $(sudo docker exec tftp-server id -u tftp):$(sudo docker exec tftp-server id -g tftp) tftpboot
+```
+
+Prueba desde **otro equipo** con un cliente TFTP (en Ubuntu, el paquete `tftp-hpa` es solo el cliente, no un servidor):
+`tftp IP_DEL_TFTP -c get prueba.txt`. En Windows: `tftp -i IP_DEL_TFTP GET prueba.txt`.
+
 ## Ítems de monitoreo recomendados
 
 | Servicio | Clave (tipo Zabbix agent) |
 |---|---|
 | NTP | `net.udp.service[ntp,127.0.0.1]` |
 | DNS | `net.dns[<IP_VM>,<dominio>,A,2,1]` y `net.tcp.port[<IP_VM>,53]` |
-| Syslog | `proc.num[rsyslogd]` |
-| TFTP | `proc.num[in.tftpd]` |
+| Syslog | `net.udp.listen[514]` |
+| TFTP | `net.udp.listen[69]` |
 
 Trigger de ejemplo: `last(/<host>/net.udp.service[ntp,127.0.0.1])=0`.
+`proc.num[...]` no sirve para Syslog/TFTP: el agente ve también el `rsyslogd` de la propia VM y el valor no baja a 0 si cae el contenedor; por eso se usa `net.udp.listen[puerto]`.
 Usar el *Host name* técnico del host en las expresiones, no el nombre visible.
 
 ## Apagado ordenado
